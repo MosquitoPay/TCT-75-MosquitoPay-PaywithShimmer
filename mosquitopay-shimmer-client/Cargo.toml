@@ -1,0 +1,23 @@
+[package]
+name = "mosquitopay-shimmer-client"
+version = "1.0.0"
+edition = "2021"
+authors = ["Dimas Praja <dimas.praja@mosquitopay.io>"]
+description = "Create a Mosquitopay payment receiver for pay with shimmer"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
+dotenvy = "0.15.7"
+env_logger = "0.10.1"
+hex = { version = "0.4.3", features = ["serde"] }
+iota-sdk = { version = "1.1.2", features = ["client", "mqtt", "stronghold", "storage", "wallet", "events"] }
+json = "0.12.4"
+log = "0.4.20"
+reqwest = { version = "0.11.22", features = ["json"] }
+serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
+tapa-trait-serde = "0.3.0"
+tokio = { version = "1.34.0", features = ["full"] }

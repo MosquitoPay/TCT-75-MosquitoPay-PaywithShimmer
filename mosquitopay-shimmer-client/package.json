@@ -1,0 +1,13 @@
+{
+  "name": "mosquitopay-shimmer-client",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "cargo build && cargo run",
+    "start": "cargo run --release",
+    "build": "cargo build --release"
+  },
+  "keywords": [],
+  "author": "Dimas Praja <dimas.praja@mosquitopay.io>",
+  "license": "ISC"
+}

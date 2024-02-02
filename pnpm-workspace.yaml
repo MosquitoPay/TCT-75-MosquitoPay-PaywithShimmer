@@ -1,0 +1,5 @@
+packages:
+  - 'mosquitopay-shimmer-backend'
+  - 'mosquitopay-shimmer-frontend'
+  - 'mosquitopay-shimmer-client'
+  - 'mosquitopay-shimmer-charge-package'

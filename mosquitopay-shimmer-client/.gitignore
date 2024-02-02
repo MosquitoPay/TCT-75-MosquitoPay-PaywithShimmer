@@ -1,0 +1,9 @@
+target
+data
+*.tgz
+*_vault
+.env
+*.backup
+*.backup.*
+compose-*
+*.pub
