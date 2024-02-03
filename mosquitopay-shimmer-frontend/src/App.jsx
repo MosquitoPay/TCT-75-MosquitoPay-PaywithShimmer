@@ -34,7 +34,7 @@ export default function App() {
     const searchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(searchParams.entries());
 
-    setQueryParams(queryParams);
+    setQueryParams(params);
 
     if (!queryParams) {
       fetch(backendUrl)
