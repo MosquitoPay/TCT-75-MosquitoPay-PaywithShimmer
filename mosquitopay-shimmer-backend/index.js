@@ -195,6 +195,14 @@ const webhookOrganizerActor = spawnStateless(
       return reply.status(200).send({});
     });
 
+    app.delete('/shop', (_request, reply) => {
+      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
+        rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'));
+        rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
+      }
+      return reply.status(204).send();
+    });
+
     app.post('/transaction', (request, reply) => {
       console.log({
         body: request.body
