@@ -1,13 +1,30 @@
+const { default: Busboy } = require('@fastify/busboy');
 const fastifyCors = require('@fastify/cors');
 const fastifyFormbody = require('@fastify/formbody');
 const fastifyHelmet = require('@fastify/helmet');
-const path = require('path');
-// const appRootPath = require('app-root-path');
-const { randomUUID } = require('crypto');
+const appRootPath = require('app-root-path');
+const archiver = require('archiver');
 const fastify = require('fastify');
+const { existsSync, readFileSync, cpSync, createWriteStream, rmSync, createReadStream } = require('fs');
+const { dispatch, spawnStateless, start } = require('nact');
+const path = require('path');
+const { replaceInFileSync } = require('replace-in-file');
 const { Server } = require('rpc-websockets');
+const { pipeline } = require('stream/promises');
+require('dotenv').config({
+  path: path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', '.env')
+});
 
 const app = fastify();
+const system = start();
+
+// Actor delay and reset
+const actorDelay = (duration) =>
+  new Promise((resolve) => setTimeout(() => resolve(), duration));
+const actorReset = async (_msg, _error, ctx) => {
+  await actorDelay(500);
+  return ctx.reset;
+};
 
 // RPC Server
 // Handles connection btw pay with iota part
@@ -19,12 +36,63 @@ const server = new Server({
 let clients = {};
 let shimmerExchange = 0.02; // exchange shimmer coin for euro = 0.02 euro/shimmer or we can check the exchange from the api like coingecko
 
+const webhookOrganizerActor = spawnStateless(
+  system,
+  async (msg, _ctx) => {
+    try {
+      const user = msg.tag;
+      const baseUrl = msg.shop.shopName;
+
+      console.log({
+        user,
+        baseUrl
+      });
+
+      fetch(baseUrl + '/?wc-api=WC_Gateway_Mosquitopay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cc-webhook-signature': msg.shop.webhookKey,
+        },
+        body: JSON.stringify({
+          event: {
+            data: {
+              metadata: {
+                order_id: msg.metadata,
+              },
+              timeline: {
+                mosquitopay_status: 'COMPLETED',
+              },
+            },
+          },
+        }),
+      })
+        .then((_) => {
+          server
+            .of(`/shopid/${msg.shop.shopName}/user/${user}`)
+            .emit('transaction', 'FINISHED');
+        })
+        .catch((e) =>
+          console.error(
+            'RESPONSE FAILED ON WEBHOOK ORGANIZER ACTOR: ', e
+          )
+        );
+    } catch (err) {
+      console.error('GENERAL ERROR ON WEBHOOK ORGANIZER ACTOR: ', err);
+    }
+  },
+  'webhookOrganizerActor',
+  { onCrash: actorReset }
+);
+
 (async () => {
   try {
     // await import
     const { createCharge } = await import(
       '../mosquitopay-shimmer-charge-package/src/main.js'
     );
+
+    // console.log(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'));
 
     // CORS class config
     app.register(fastifyCors);
@@ -39,7 +107,7 @@ let shimmerExchange = 0.02; // exchange shimmer coin for euro = 0.02 euro/shimme
     server.event('transaction');
 
     server.on('connection', (socket, request) => {
-      // debug logging
+      //  logging
       console.log(`SOCKET ID: ${socket._id}`);
       // console.log(`REQ URL: ${request.url}`);
       console.log(request.headers);
@@ -49,37 +117,6 @@ let shimmerExchange = 0.02; // exchange shimmer coin for euro = 0.02 euro/shimme
         const shopId = request.url.split('/shopid/')[1].split('/user/')[0];
         const userId = request.url.split('/shopid/')[1].split('/user/')[1];
         clients[socket._id] = shopId + ':' + userId;
-
-        // event for wallet
-        server.of(`/shopid/${shopId}/user/${userId}`).emit(
-          'wallet',
-          JSON.stringify({
-            shimmer: app.shimmerWallets[shopId],
-          }),
-        );
-
-        server.register(
-          'wallet',
-          function (params) {
-            try {
-              console.log('WALLET CALL PARAMS: ', params);
-              console.log(
-                'SHIMMER WALLET: ',
-                app.shimmerWallets[Buffer.from(params[0]).toString('base64')],
-              );
-
-              const walletAddresses = {
-                shimmer:
-                  app.shimmerWallets[Buffer.from(params[0]).toString('base64')],
-              };
-              return walletAddresses;
-            } catch (e) {
-              console.error(`RPC SHOP METHOD WALLET ERROR: ${e.message}`);
-              return 'ERROR';
-            }
-          },
-          `/shopid/${shopId}/user/${userId}`,
-        );
       }
     });
 
@@ -90,7 +127,7 @@ let shimmerExchange = 0.02; // exchange shimmer coin for euro = 0.02 euro/shimme
       // deleting connected client
       if (clients[socket._id]) {
         server.closeNamespace(
-          `/shop/${clients[socket._id].split(':')[0]}/user/${
+          `/shopid/${clients[socket._id].split(':')[0]}/user/${
             clients[socket._id].split(':')[1]
           }`,
         );
@@ -150,40 +187,163 @@ let shimmerExchange = 0.02; // exchange shimmer coin for euro = 0.02 euro/shimme
     // ================== ROUTES FOR API REQUESTS =================== //
     // ============================================================== //
     app.get('/shop', (_request, reply) => {
-      return reply.status(200).send({
-        shop: 'http://test.local',
-        api: 'http://localhost:8888',
+      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
+        const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
+        console.log({ shopJson });
+        return reply.status(200).send(shopJson);
+      }
+      return reply.status(200).send({});
+    });
+
+    app.post('/transaction', (request, reply) => {
+      console.log({
+        body: request.body
       });
+      // if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
+      //   const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
+      //   // console.log({ shopJson });
+      //   dispatch(webhookOrganizerActor, {
+      //     shop: shopJson,
+      //     tag: request.body.tag,
+      //     metadata: request.body.metadata,
+      //   })
+      // }
+      return reply
+        .status(200)
+        .send();
     });
 
     app.post('/charge', (request, reply) => {
       const bodyOrder = request.body;
       const cartString = request.body.metadata.cart;
-      let tag = randomUUID();
-      let metadata = randomUUID();
       return reply
         .status(200)
         .send(
           createCharge(
-            'http://localhost:5173',
+            process.env.PAYMENT_PAGE,
             bodyOrder,
             cartString,
-            tag,
-            metadata,
             shimmerExchange,
           ),
         );
     });
 
-    app.post('/upload', (request, reply) => {
-      const shopData = request.body;
-      const shopPath = shopData.name + '.json';
+    app.get('/plugin', (_request, reply) => {
+      const plugin = createReadStream(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
+              
+      console.log('SENDING STREAM PLUGIN');
 
-      const filePath = path.join(__dirname, shopPath);
+      reply.header('Content-Disposition', 'attachment; filename=MP.Woocommerce.zip');
+      return reply.send(plugin).type('application/zip');
+    });
 
-      // Write the JSON data to a file
-      fs.promises.writeFileSync(filePath, JSON.stringify(shopData, null, 2));
-      return reply.status(200).send('OK');
+    app.addContentTypeParser('multipart/form-data', {
+      bodyLimit: 4096000
+    }, function (_request, payload, done) {
+      // console.log('REQ: ', request);
+      done(null, payload);
+    });
+
+    app.post('/upload', async (request, reply) => {
+      try {
+        //
+        const busboy = new Busboy({ headers: request.raw.headers });
+        busboy.on('file', function (fieldname, file, _filename, _encoding, _mimetype) {
+          try {
+            if (fieldname === 'shop') {
+              // optionaly stream file to disk
+              // [!] never use original filename
+              const saveTo = path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json');
+      
+              // await pipeline(file, createWriteStream(saveTo));
+              file.pipe(createWriteStream(saveTo));
+            } 
+
+            file.on('data', function (data) {
+              console.log('FILE[' + fieldname + '] SIZE: ' + data.length + ' BYTES');
+            });
+    
+            file.on('end', function () {
+              console.log('FILE[' + fieldname + '] FINISHED');
+            });
+
+            file.on('error', function (error) {
+              console.error(error);
+            });
+          } catch (error) {
+            console.error('BUSBOY FILE ERROR: ' + error.message);
+          }
+        });
+
+        busboy.on('field', function (fieldname, val) {
+          console.log('FIELD[' + fieldname + '] VALUE: ' + val);
+        });
+
+        busboy.on('finish', async function () {
+          cpSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.Template'), path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), { recursive: true });
+          const configOptions = {
+            files: path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce', 'includes', 'class-mosquitopay-api-handler.php'),
+            from: [/{{API_URL}}/g],
+            to: [process.env.API_URL],
+          };
+          replaceInFileSync(configOptions);
+          const output = createWriteStream(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
+          const archive = archiver('zip', {
+            zlib: { level: 9 } // Sets the compression level.
+          });
+
+          // This event is fired when the data source is drained no matter what was the data source.
+          // It is not part of this library but rather from the NodeJS Stream API.
+          // @see: https://nodejs.org/api/stream.html#stream_event_end
+          output.on('end', function () {
+            console.log('DATA HAS BEEN DRAINED');
+          });
+
+          // listen for all archive data to be written
+          // 'close' event is fired only when a file descriptor is involved
+          output.on('close', async function () {
+            try {
+              console.log(archive.pointer() + ' TOTAL BYTES');
+              console.log('ARCHIVER HAS BEEN FINALIZED AND THE OUTPUT FILE DESCRIPTOR HAS CLOSED.');
+              rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), { recursive: true });
+              return reply.status(200).send();
+            } catch (e) {
+              console.error('ERROR ON OUTPUT CLOSE:', e);
+              return reply.status(500).send();
+            }
+          });
+
+          // good practice to catch warnings (ie stat failures and other non-blocking errors)
+          archive.on('warning', function (err) {
+            console.error('ARCHIVE ON WARNING: ', err);
+          });
+
+          // good practice to catch this error explicitly
+          archive.on('error', function (err) {
+            console.error('ARCHIVE ON ERROR: ', err);
+          });
+
+          // pipe archive data to the file
+          archive.pipe(output);
+
+          // append files from a sub-directory, putting its contents at the root of archive
+          archive.directory(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), false);
+
+          // finalize the archive (ie we are done appending files but streams have to finish yet)
+          // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
+          await archive.finalize();
+        });
+
+        busboy.on('error', function (err) {
+          console.error('BUSBOY ERROR: ' + err.message);
+          return reply.status(500).send();
+        });
+
+        //
+        await pipeline(request.raw, busboy);
+      } catch (error) {
+        console.error(`${request.method} ${request.url} ERROR: `, error);
+      }
     });
 
     app.get('/health', (request, reply) => {

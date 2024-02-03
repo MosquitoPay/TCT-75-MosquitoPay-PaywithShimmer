@@ -165,13 +165,11 @@ const totalShimmer = (totalInEuroWithTax, currencyShimmerEuro) => {
  * @param { string } base_redirect 
  * @param { Order } order 
  * @param { string } cart
- * @param { string } tag
- * @param { string } metadata
  * @param { number } shimmerExchange 
  * @param { number } tax 
  * @returns { Error | RedirectUrl }
  */
-export const createCharge = (base_redirect, order, cart, tag, metadata, shimmerExchange, tax = 0) => {
+export const createCharge = (base_redirect, order, cart, shimmerExchange, tax = 0) => {
   try {
     // redirect and cancel url
     const redirecting = order.redirect_url
@@ -195,10 +193,8 @@ export const createCharge = (base_redirect, order, cart, tag, metadata, shimmerE
       encodeURIComponent(redirecting) +
       '&c=' +
       encodeURIComponent(canceling) +
-      '&t=' +
-      encodeURIComponent(tag) +
       '&m=' +
-      encodeURIComponent(metadata) +
+      orderReceived.order.id +
       '&s=' +
       ((orderReceived.total.shimmer * (10**6)).toFixed().toString()) +
       '&e=' +

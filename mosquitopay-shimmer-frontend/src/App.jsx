@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { cn } from './lib/utils';
 import {
   Card,
   CardContent,
@@ -12,11 +11,14 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+// import Chance from 'chance';
 import { Client } from 'rpc-websockets';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from './lib/utils.js';
 
 export default function App() {
-  const [metaData, setMetaData] = useState('');
+  const [metadata, setMetadata] = useState('');
+  const [registered, setRegistered] = useState(false);
   const [amount, setAmount] = useState('');
   const [shop, setShop] = useState('');
   const [cancel, setCancel] = useState('');
@@ -25,23 +27,26 @@ export default function App() {
   const [socketConnected, setSocketConnected] = useState(false);
   // const [queryParams, setQueryParams] = useState({});
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const formRef = useRef();
+  // const formRef = useRef();
+  const fileRef = useRef();
   const socket = useRef();
 
-  const userID = uuidv4();
+  const userId = uuidv4();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     // const params = Object.fromEntries(searchParams.entries());
 
-    fetch(backendUrl)
+    fetch(backendUrl + '/shop')
       .then((response) => {
+        console.log('RESP: ', response);
         response
           .json()
           .then((resp) => {
             console.log({ resp });
             if (resp.shop) {
               setShop(resp);
+              setRegistered(true);
             }
           })
           .catch((err) => {
@@ -54,7 +59,6 @@ export default function App() {
 
     const onConnect = () => {
       setSocketConnected(true);
-      socket?.current?.subscribe('wallet');
       socket?.current?.subscribe('transaction'); //Success can be tracked from here r and c!!
     };
 
@@ -65,10 +69,12 @@ export default function App() {
     const connectSocket = (shop, user) => {
       console.log({ shop, user });
 
-      socket.current = new Client(`${backendUrl}/shopid/${shop}/user/${user}`);
+      socket.current = new Client(
+        `${import.meta.env.VITE_RPC_URL}/shopid/${shop}/user/${user}`,
+      );
       socket.current.on('open', onConnect);
       socket.current.on('close', onDisconnect);
-      // console.log("SOCKET CURRENT", socket.current);
+      console.log("SOCKET CURRENT", socket.current);
       // console.log("CLIENT");
     };
 
@@ -82,16 +88,22 @@ export default function App() {
       if (meta && shimmer && r && c) {
         // const shop = sId.split("|")[2];
 
-        setMetaData(meta);
+        setMetadata(meta);
 
         setAmount(String(shimmer));
         setCancel(decodeURIComponent(c));
         setRedirect(decodeURIComponent(r));
 
+        console.log({ deepLink });
+
         if (!socket.current && !socketConnected) {
           // console.log("NOT CONNECTED");
-          connectSocket(shop, userID);
+          connectSocket(shop, userId);
           // console.log("SOCKET CURRENT", socket.current);
+        } else {
+          setDeepLink(
+            `firefly://wallet/send/${shop.shopShimmerWalletAddress}/?amount=${amount}&tag=${userId}&metadata=${metadata}`,
+          );
         }
       }
     }
@@ -108,16 +120,15 @@ export default function App() {
 
   useEffect(() => {
     if (socket.current && socketConnected) {
-      socket.current.call('wallet', [shop]).then((respWallet) => {
-        console.log(respWallet);
-        setDeepLink(
-          `firefly://wallet/send/${
-            respWallet.iota
-          }/?amount=${amount}&tag=${btoa(
-            `mosquitopay|${shop}`,
-          )}&metadata=${metaData}`,
-        );
-      });
+      setDeepLink(
+        `firefly://wallet/send/${shop.shopShimmerWalletAddress}/?amount=${amount}&tag=${userId}&metadata=${metadata}`,
+      );
+      // socket.current.call('wallet', [shop]).then((respWallet) => {
+      //   console.log(respWallet);
+      //   setDeepLink(
+      //     `firefly://wallet/send/${shop.shopShimmerWalletAddress}/?amount=${amount}&tag=${userId}&metadata=${metadata}`,
+      //   );
+      // });
     }
     // console.log(deepLink);
   }, [socketConnected]);
@@ -139,43 +150,128 @@ export default function App() {
     });
   }
 
-  const submitHandler = async () => {
-    const formData = new FormData(formRef.current);
-    const data = Object.fromEntries(formData.entries());
+  const submitHandler = async (evt) => {
+    evt.preventDefault();
+
+    //
+    const formData = new FormData();
+    formData.append('shop', fileRef.current.files[0]);
+    // const data = Object.fromEntries(formData.entries());
 
     let response = await fetch(`${backendUrl}/upload`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-      credentials: 'include',
+      body: formData,
     });
 
     console.log(response);
+
+    window.location.reload();
+  };
+
+  const downloadPlugin = async (evt) => {
+    evt.preventDefault();
+
+    fetch(`${backendUrl}/plugin`, {
+      method: 'GET',
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        // Create blob link to download
+        const url = window?.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `MP.Woocommerce.zip`);
+
+        // Append to html link element page
+        document.body.appendChild(link);
+
+        // Start download
+        link.click();
+
+        // Clean up and remove the link
+        link.parentNode.removeChild(link);
+      });
   };
 
   return (
     <>
       <div className="flex flex-col h-screen w-screen">
         {shop ? (
-          <Card className="w-[360px] mx-auto my-auto">
-            <a
-              className={cn(
-                buttonVariants({
-                  variant: 'default',
-                  className:
-                    'w-full inline-flex items-center justify-start leading-10 rounded-full border-fireflyb hover:shadow-fireflyb',
-                }),
-              )}
-              target="_blank"
-              rel="noreferrer"
-              href={deepLink}
-            >
-              Pay with Firefly Shimmer (click twice)
-            </a>
-          </Card>
-        ) : (
+            <Card className="w-[360px] mx-auto my-auto">
+              <a
+                className={cn(
+                  buttonVariants({
+                    variant: 'default',
+                    className:
+                      'w-full inline-flex items-center justify-start leading-10 rounded-full border-fireflyb hover:shadow-fireflyb',
+                  }),
+                )}
+                target="_blank"
+                rel="noreferrer"
+                href={deepLink}
+              >
+                Pay with Firefly Shimmer (click twice)
+              </a>
+            </Card>
+          ) : (
+            registered ?
+            (
+            <Card className="w-[360px] mx-auto my-auto">
+              <CardHeader>
+                <CardTitle>Shop</CardTitle>
+                <CardDescription>Registered shop.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid w-full items-center gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="shopname">Shop Name</Label>
+                    <Input
+                      id="shopname"
+                      type="text"
+                      value={shop.shopName}
+                      disable
+                    />
+                  </div>
+                </div>
+                <div className="grid w-full items-center gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="apikey">API Key</Label>
+                    <Input
+                      id="apikey"
+                      type="text"
+                      value={shop.apiKey}
+                      disable
+                    />
+                  </div>
+                </div>
+                <div className="grid w-full items-center gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="webhookkey">Webhook Key</Label>
+                    <Input
+                      id="webhookkey"
+                      type="text"
+                      value={shop.webhookKey}
+                      disable
+                    />
+                  </div>
+                </div>
+                <div className="grid w-full items-center gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="wallet">Shop Wallet Address</Label>
+                    <Input
+                      id="wallet"
+                      type="text"
+                      value={shop.shopShimmerWalletAddress}
+                      disable
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button onClick={downloadPlugin}>Download Plugin</Button>
+              </CardFooter>
+            </Card>
+          ) : (
           <Card className="w-[360px] mx-auto my-auto">
             <CardHeader>
               <CardTitle>Register shop</CardTitle>
@@ -183,16 +279,17 @@ export default function App() {
                 Register your shop in one-click.
               </CardDescription>
             </CardHeader>
-            <form ref={formRef} onSubmit={submitHandler}>
+            <form onSubmit={submitHandler}>
               <CardContent>
                 <div className="grid w-full items-center gap-4">
                   <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="name">Shop URL</Label>
-                    <Input id="name" placeholder="Shop URL" />
-                  </div>
-                  <div className="flex flex-col space-y-1.5">
                     <Label htmlFor="details">Shop Details</Label>
-                    <Input id="details" type="file" accept="application/json" />
+                    <Input
+                      id="details"
+                      type="file"
+                      accept="application/json"
+                      ref={fileRef}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -201,7 +298,7 @@ export default function App() {
               </CardFooter>
             </form>
           </Card>
-        )}
+        ))}
       </div>
     </>
   );

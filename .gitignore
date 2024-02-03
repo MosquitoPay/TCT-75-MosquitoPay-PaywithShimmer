@@ -140,3 +140,6 @@ data
 compose-*
 *.pub
 .DS_Store
+shop.json
+MP.Woocommerce
+MP.Woocommerce.zip
