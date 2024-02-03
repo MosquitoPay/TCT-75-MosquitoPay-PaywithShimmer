@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Client } from 'rpc-websockets';
-import Chance from 'chance';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function App() {
   const [metaData, setMetaData] = useState('');
@@ -28,7 +28,7 @@ export default function App() {
   const formRef = useRef();
   const socket = useRef();
 
-  const userID = new Chance.integer({ min: 1_000_000, max: 9_999_999 });
+  const userID = uuidv4();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
