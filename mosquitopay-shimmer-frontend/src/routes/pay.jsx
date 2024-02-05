@@ -14,9 +14,9 @@ import { Label } from '@/components/ui/label';
 // import Chance from 'chance';
 import { Client } from 'rpc-websockets';
 import { v4 as uuidv4 } from 'uuid';
-import { cn } from './lib/utils.js';
+import { cn } from '../lib/utils.js';
 
-export default function App() {
+export default function Register() {
   const [metadata, setMetadata] = useState('');
   const [registered, setRegistered] = useState(false);
   const [amount, setAmount] = useState('');
@@ -43,7 +43,8 @@ export default function App() {
         response
           .json()
           .then((resp) => {
-            console.log({ resp });
+            // console.log({ resp });
+            console.log(resp.body);
             if (resp.shop) {
               setShop(resp);
               setRegistered(true);
@@ -74,7 +75,7 @@ export default function App() {
       );
       socket.current.on('open', onConnect);
       socket.current.on('close', onDisconnect);
-      console.log("SOCKET CURRENT", socket.current);
+      console.log('SOCKET CURRENT', socket.current);
       // console.log("CLIENT");
     };
 
@@ -197,86 +198,82 @@ export default function App() {
     <>
       <div className="flex flex-col h-screen w-screen">
         {shop ? (
-            <Card className="w-[360px] mx-auto my-auto">
-              <a
-                className={cn(
-                  buttonVariants({
-                    variant: 'default',
-                    className:
-                      'w-full inline-flex items-center justify-start leading-10 rounded-full border-fireflyb hover:shadow-fireflyb',
-                  }),
-                )}
-                target="_blank"
-                rel="noreferrer"
-                href={deepLink}
-              >
-                Pay with Firefly Shimmer (click twice)
-              </a>
-            </Card>
-          ) : (
-            registered ?
-            (
-            <Card className="w-[360px] mx-auto my-auto">
-              <CardHeader>
-                <CardTitle>Shop</CardTitle>
-                <CardDescription>Registered shop.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="shopname">Shop Name</Label>
-                    <Input
-                      id="shopname"
-                      type="text"
-                      value={shop.shopName}
-                      disable
-                    />
-                  </div>
+          <Card className="w-[360px] mx-auto my-auto">
+            <a
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  className:
+                    'w-full inline-flex items-center justify-start leading-10 rounded-full border-fireflyb hover:shadow-fireflyb',
+                }),
+              )}
+              target="_blank"
+              rel="noreferrer"
+              href={deepLink}
+            >
+              Pay with Firefly Shimmer (click twice)
+            </a>
+          </Card>
+        ) : registered ? (
+          <Card className="w-[360px] mx-auto my-auto">
+            <CardHeader>
+              <CardTitle>Shop</CardTitle>
+              <CardDescription>Registered shop.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="shopname">Shop Name</Label>
+                  <Input
+                    id="shopname"
+                    type="text"
+                    value={shop.shopName}
+                    disable
+                  />
                 </div>
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="apikey">API Key</Label>
-                    <Input
-                      id="apikey"
-                      type="text"
-                      value={shop.apiKey}
-                      disable
-                    />
-                  </div>
+              </div>
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="apikey">API Key</Label>
+                  <Input id="apikey" type="text" value={shop.apiKey} disable />
                 </div>
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="webhookkey">Webhook Key</Label>
-                    <Input
-                      id="webhookkey"
-                      type="text"
-                      value={shop.webhookKey}
-                      disable
-                    />
-                  </div>
+              </div>
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="webhookkey">Webhook Key</Label>
+                  <Input
+                    id="webhookkey"
+                    type="text"
+                    value={shop.webhookKey}
+                    disable
+                  />
                 </div>
-                <div className="grid w-full items-center gap-4">
-                  <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="wallet">Shop Wallet Address</Label>
-                    <Input
-                      id="wallet"
-                      type="text"
-                      value={shop.shopShimmerWalletAddress}
-                      disable
-                    />
-                  </div>
+              </div>
+              <div className="grid w-full items-center gap-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="wallet">Shop Wallet Address</Label>
+                  <Input
+                    id="wallet"
+                    type="text"
+                    value={shop.shopShimmerWalletAddress}
+                    disable
+                  />
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button onClick={downloadPlugin}>Download Plugin</Button>
-              </CardFooter>
-            </Card>
-          ) : (
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button onClick={downloadPlugin}>Download Plugin</Button>
+            </CardFooter>
+          </Card>
+        ) : (
           <Card className="w-[360px] mx-auto my-auto">
             <CardHeader>
               <CardTitle>Register shop</CardTitle>
               <CardDescription>
                 Register your shop in one-click.
+              </CardDescription>
+              <CardDescription className="h-5">
+                {shop.shopName}
               </CardDescription>
             </CardHeader>
             <form onSubmit={submitHandler}>
@@ -298,7 +295,7 @@ export default function App() {
               </CardFooter>
             </form>
           </Card>
-        ))}
+        )}
       </div>
     </>
   );

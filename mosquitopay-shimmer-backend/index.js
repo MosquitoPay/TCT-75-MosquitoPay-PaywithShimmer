@@ -187,8 +187,9 @@ const webhookOrganizerActor = spawnStateless(
     // ================== ROUTES FOR API REQUESTS =================== //
     // ============================================================== //
     app.get('/shop', (_request, reply) => {
-      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
-        const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
+      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json'))) {
+        const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json')).toString());
+        const shop = readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json')).toString();
         console.log({ shopJson });
         return reply.status(200).send(shopJson);
       }
