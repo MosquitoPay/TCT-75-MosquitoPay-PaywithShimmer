@@ -5,14 +5,21 @@ const fastifyHelmet = require('@fastify/helmet');
 const appRootPath = require('app-root-path');
 const archiver = require('archiver');
 const fastify = require('fastify');
-const { existsSync, readFileSync, cpSync, createWriteStream, rmSync, createReadStream } = require('fs');
+const {
+  existsSync,
+  readFileSync,
+  cpSync,
+  createWriteStream,
+  rmSync,
+  createReadStream,
+} = require('fs');
 const { dispatch, spawnStateless, start } = require('nact');
 const path = require('path');
 const { replaceInFileSync } = require('replace-in-file');
 const { Server } = require('rpc-websockets');
 const { pipeline } = require('stream/promises');
 require('dotenv').config({
-  path: path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', '.env')
+  path: path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', '.env'),
 });
 
 const app = fastify();
@@ -45,7 +52,7 @@ const webhookOrganizerActor = spawnStateless(
 
       console.log({
         user,
-        baseUrl
+        baseUrl,
       });
 
       fetch(baseUrl + '/?wc-api=WC_Gateway_Mosquitopay', {
@@ -73,16 +80,14 @@ const webhookOrganizerActor = spawnStateless(
             .emit('transaction', 'FINISHED');
         })
         .catch((e) =>
-          console.error(
-            'RESPONSE FAILED ON WEBHOOK ORGANIZER ACTOR: ', e
-          )
+          console.error('RESPONSE FAILED ON WEBHOOK ORGANIZER ACTOR: ', e),
         );
     } catch (err) {
       console.error('GENERAL ERROR ON WEBHOOK ORGANIZER ACTOR: ', err);
     }
   },
   'webhookOrganizerActor',
-  { onCrash: actorReset }
+  { onCrash: actorReset },
 );
 
 (async () => {
@@ -187,26 +192,55 @@ const webhookOrganizerActor = spawnStateless(
     // ================== ROUTES FOR API REQUESTS =================== //
     // ============================================================== //
     app.get('/shop', (_request, reply) => {
-      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json'))) {
-        const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json')).toString());
-        const shop = readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'sample.shop.json')).toString();
+      const jsonFilePath = path.resolve(
+        appRootPath.path,
+        'mosquitopay-shimmer-backend',
+        'sample.shop.json',
+      );
+
+      if (existsSync(jsonFilePath)) {
+        // Reading the JSON file
+        const shopJson = JSON.parse(readFileSync(jsonFilePath).toString());
         console.log({ shopJson });
-        return reply.status(200).send(shopJson);
+        reply.status(200).send(shopJson);
+      } else {
+        // Case where the file does not exist
+        reply.status(404).send({ message: 'Shop JSON file not found' });
       }
-      return reply.status(200).send({});
     });
 
     app.delete('/shop', (_request, reply) => {
-      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
-        rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'));
-        rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
+      if (
+        existsSync(
+          path.resolve(
+            appRootPath.path,
+            'mosquitopay-shimmer-backend',
+            'shop.json',
+          ),
+        )
+      ) {
+        rmSync(
+          path.resolve(
+            appRootPath.path,
+            'mosquitopay-shimmer-backend',
+            'shop.json',
+          ),
+        );
+        rmSync(
+          path.resolve(
+            appRootPath.path,
+            'mosquitopay-shimmer-backend',
+            'templates',
+            'MP.Woocommerce.zip',
+          ),
+        );
       }
       return reply.status(204).send();
     });
 
     app.post('/transaction', (request, reply) => {
       console.log({
-        body: request.body
+        body: request.body,
       });
       // if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
       //   const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
@@ -217,9 +251,7 @@ const webhookOrganizerActor = spawnStateless(
       //     metadata: request.body.metadata,
       //   })
       // }
-      return reply
-        .status(200)
-        .send();
+      return reply.status(200).send();
     });
 
     app.post('/charge', (request, reply) => {
@@ -238,67 +270,118 @@ const webhookOrganizerActor = spawnStateless(
     });
 
     app.get('/plugin', (_request, reply) => {
-      const plugin = createReadStream(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
-              
+      const plugin = createReadStream(
+        path.resolve(
+          appRootPath.path,
+          'mosquitopay-shimmer-backend',
+          'templates',
+          'MP.Woocommerce.zip',
+        ),
+      );
+
       console.log('SENDING STREAM PLUGIN');
 
-      reply.header('Content-Disposition', 'attachment; filename=MP.Woocommerce.zip');
+      reply.header(
+        'Content-Disposition',
+        'attachment; filename=MP.Woocommerce.zip',
+      );
       return reply.send(plugin).type('application/zip');
     });
 
-    app.addContentTypeParser('multipart/form-data', {
-      bodyLimit: 4096000
-    }, function (_request, payload, done) {
-      // console.log('REQ: ', request);
-      done(null, payload);
-    });
+    app.addContentTypeParser(
+      'multipart/form-data',
+      {
+        bodyLimit: 4096000,
+      },
+      function (_request, payload, done) {
+        // console.log('REQ: ', request);
+        done(null, payload);
+      },
+    );
 
     app.post('/upload', async (request, reply) => {
       try {
         //
         const busboy = new Busboy({ headers: request.raw.headers });
-        busboy.on('file', function (fieldname, file, _filename, _encoding, _mimetype) {
-          try {
-            if (fieldname === 'shop') {
-              // optionaly stream file to disk
-              // [!] never use original filename
-              const saveTo = path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json');
-      
-              // await pipeline(file, createWriteStream(saveTo));
-              file.pipe(createWriteStream(saveTo));
-            } 
+        busboy.on(
+          'file',
+          function (fieldname, file, _filename, _encoding, _mimetype) {
+            try {
+              if (fieldname === 'shop') {
+                // optionaly stream file to disk
+                // [!] never use original filename
+                const saveTo = path.resolve(
+                  appRootPath.path,
+                  'mosquitopay-shimmer-backend',
+                  'shop.json',
+                );
 
-            file.on('data', function (data) {
-              console.log('FILE[' + fieldname + '] SIZE: ' + data.length + ' BYTES');
-            });
-    
-            file.on('end', function () {
-              console.log('FILE[' + fieldname + '] FINISHED');
-            });
+                // await pipeline(file, createWriteStream(saveTo));
+                file.pipe(createWriteStream(saveTo));
+              }
 
-            file.on('error', function (error) {
-              console.error(error);
-            });
-          } catch (error) {
-            console.error('BUSBOY FILE ERROR: ' + error.message);
-          }
-        });
+              file.on('data', function (data) {
+                console.log(
+                  'FILE[' + fieldname + '] SIZE: ' + data.length + ' BYTES',
+                );
+              });
+
+              file.on('end', function () {
+                console.log('FILE[' + fieldname + '] FINISHED');
+              });
+
+              file.on('error', function (error) {
+                console.error(error);
+              });
+            } catch (error) {
+              console.error('BUSBOY FILE ERROR: ' + error.message);
+            }
+          },
+        );
 
         busboy.on('field', function (fieldname, val) {
           console.log('FIELD[' + fieldname + '] VALUE: ' + val);
         });
 
         busboy.on('finish', async function () {
-          cpSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.Template'), path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), { recursive: true });
+          cpSync(
+            path.resolve(
+              appRootPath.path,
+              'mosquitopay-shimmer-backend',
+              'templates',
+              'MP.Woocommerce.Template',
+            ),
+            path.resolve(
+              appRootPath.path,
+              'mosquitopay-shimmer-backend',
+              'templates',
+              'MP.Woocommerce',
+            ),
+            { recursive: true },
+          );
           const configOptions = {
-            files: path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce', 'includes', 'class-mosquitopay-api-handler.php'),
+            files: path.resolve(
+              appRootPath.path,
+              'mosquitopay-shimmer-backend',
+              'templates',
+              'MP.Woocommerce',
+              'includes',
+              'class-mosquitopay-api-handler.php',
+            ),
             from: [/{{API_URL}}/g],
             to: [process.env.API_URL],
           };
           replaceInFileSync(configOptions);
-          const output = createWriteStream(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce.zip'));
+          const output = createWriteStream(
+            path.resolve(
+              appRootPath.path,
+              'mosquitopay-shimmer-backend',
+              'templates',
+              'MP.Woocommerce.zip',
+            ),
+          );
           const archive = archiver('zip', {
-            zlib: { level: 9 } // Sets the compression level.
+            zlib: { level: 9 }, // Sets the compression level.
           });
 
           // This event is fired when the data source is drained no matter what was the data source.
@@ -313,8 +396,18 @@ const webhookOrganizerActor = spawnStateless(
           output.on('close', async function () {
             try {
               console.log(archive.pointer() + ' TOTAL BYTES');
-              console.log('ARCHIVER HAS BEEN FINALIZED AND THE OUTPUT FILE DESCRIPTOR HAS CLOSED.');
-              rmSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), { recursive: true });
+              console.log(
+                'ARCHIVER HAS BEEN FINALIZED AND THE OUTPUT FILE DESCRIPTOR HAS CLOSED.',
+              );
+              rmSync(
+                path.resolve(
+                  appRootPath.path,
+                  'mosquitopay-shimmer-backend',
+                  'templates',
+                  'MP.Woocommerce',
+                ),
+                { recursive: true },
+              );
               return reply.status(200).send();
             } catch (e) {
               console.error('ERROR ON OUTPUT CLOSE:', e);
@@ -336,7 +429,15 @@ const webhookOrganizerActor = spawnStateless(
           archive.pipe(output);
 
           // append files from a sub-directory, putting its contents at the root of archive
-          archive.directory(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'templates', 'MP.Woocommerce'), false);
+          archive.directory(
+            path.resolve(
+              appRootPath.path,
+              'mosquitopay-shimmer-backend',
+              'templates',
+              'MP.Woocommerce',
+            ),
+            false,
+          );
 
           // finalize the archive (ie we are done appending files but streams have to finish yet)
           // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand

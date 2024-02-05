@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,56 +9,30 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-// import Chance from 'chance';
-import { Client } from 'rpc-websockets';
-import { v4 as uuidv4 } from 'uuid';
-import { cn } from '../lib/utils.js';
 
 export default function Register() {
-  const [metadata, setMetadata] = useState('');
-  const [registered, setRegistered] = useState(false);
-  const [amount, setAmount] = useState('');
   const [shop, setShop] = useState('');
-  const [deepLink, setDeepLink] = useState('firefly://');
-  const [socketConnected, setSocketConnected] = useState(false);
-  // const [queryParams, setQueryParams] = useState({});
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  // const formRef = useRef();
-  const socket = useRef();
 
-  const userId = uuidv4();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
+    // Define an async function inside the useEffect
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/shop`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const jsonData = await response.json(); // Parse JSON data
+        console.log(jsonData);
+        setShop(jsonData); // Set your state with the fetched data
+      } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+      }
+    };
 
-    fetch(backendUrl + '/shop')
-      .then((response) => {
-        console.log('RESP: ', response);
-        response
-          .json()
-          .then((resp) => {
-            // console.log({ resp });
-            console.log(resp.body);
-            if (resp.shop) {
-              setShop(resp);
-              setRegistered(true);
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-          });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
-   
-
+    fetchData(); // Call the async function
   }, []);
-
-
-
 
   const downloadPlugin = async (evt) => {
     evt.preventDefault();
@@ -86,57 +60,40 @@ export default function Register() {
   };
 
   return (
-      <div className="flex flex-col h-screen w-screen">
-          <Card className="w-[360px] mx-auto my-auto">
-            <CardHeader>
-              <CardTitle>Shop</CardTitle>
-              <CardDescription>Registered shop.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid w-full items-center gap-4">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="shopname">Shop Name</Label>
-                  <Input
-                    id="shopname"
-                    type="text"
-                    value={shop.shopName}
-                    disable
-                  />
-                </div>
-              </div>
-              <div className="grid w-full items-center gap-4">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="apikey">API Key</Label>
-                  <Input id="apikey" type="text" value={shop.apiKey} disable />
-                </div>
-              </div>
-              <div className="grid w-full items-center gap-4">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="webhookkey">Webhook Key</Label>
-                  <Input
-                    id="webhookkey"
-                    type="text"
-                    value={shop.webhookKey}
-                    disable
-                  />
-                </div>
-              </div>
-              <div className="grid w-full items-center gap-4">
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="wallet">Shop Wallet Address</Label>
-                  <Input
-                    id="wallet"
-                    type="text"
-                    value={shop.shopShimmerWalletAddress}
-                    disable
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button onClick={downloadPlugin}>Download Plugin</Button>
-            </CardFooter>
-          </Card>
-      </div>
+    <div className="flex flex-col h-screen w-screen">
+      <Card className="mx-auto my-auto">
+        <CardHeader>
+          <CardTitle>Shop</CardTitle>
+          <CardDescription>Registered shop.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <CardContent>Name: {shop.shopname}</CardContent>
+            </div>
+          </div>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <CardContent>API KEY: {shop.apiKey}</CardContent>
+            </div>
+          </div>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <CardContent>Webhook Key: {shop.webhookKey}</CardContent>
+            </div>
+          </div>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <CardContent>
+                Wallet Adress: {shop.shopShimmerWalletAddress}
+              </CardContent>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button onClick={downloadPlugin}>Download Plugin</Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
