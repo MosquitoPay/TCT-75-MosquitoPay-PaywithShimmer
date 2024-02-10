@@ -104,26 +104,32 @@ const cartDataParser = (data) => {
  * @returns { OrderParsed }
  */
 const orderParser = (order, cart, shimmerExchange, tax = 0) => {
-  return {
-    customer: order.metadata.billing_first_name + ' ' + order.metadata.billing_last_name,
-    email: order.metadata.billing_email,
-    shopOwner: order.metadata.admin_fistname + ' ' + order.metadata.admin_lastname,
-    shopOwnerEmail: order.metadata.admin_email,
-    phone: order.metadata.billing_phone,
-    order: {
-      id: order.metadata.order_id,
-      key: order.metadata.order_key
-    },
-    address: order.metadata.billing_address,
-    cart,
-    tax: taxEur(order.local_price.amount, tax),
-    total: {
-      eur: totalEurTax(order.local_price.amount, taxEur(order.local_price.amount, tax)),
-      shimmer: totalShimmer(
-        totalEurTax(order.local_price.amount, taxEur(order.local_price.amount, tax)),
-        shimmerExchange
-      )
+  try {
+    const theOrder = {
+      customer: order.metadata.billing_first_name + ' ' + order.metadata.billing_last_name,
+      email: order.metadata.billing_email,
+      shopOwner: order.metadata.admin_fistname + ' ' + order.metadata.admin_lastname,
+      shopOwnerEmail: order.metadata.admin_email,
+      phone: order.metadata.billing_phone,
+      order: {
+        id: order.metadata.order_id,
+        key: order.metadata.order_key
+      },
+      address: order.metadata.billing_address,
+      cart,
+      tax: taxEur(order.local_price.amount, tax),
+      total: {
+        eur: totalEurTax(order.local_price.amount, taxEur(order.local_price.amount, tax)),
+        shimmer: totalShimmer(
+          totalEurTax(order.local_price.amount, taxEur(order.local_price.amount, tax)),
+          shimmerExchange
+        )
+      }
     }
+    return theOrder;
+  } catch (err) {
+    // parsing error return
+    return new Error('Failed to parse cart data request from woocommerce shop');
   }
 }
 
@@ -189,7 +195,7 @@ export const createCharge = (base_redirect, order, cart, shimmerExchange, tax = 
     // creating redirect url for woocommerce webshop
     const redirect_url =
       base_redirect +
-      '/pay?r=' +
+      '?r=' +
       encodeURIComponent(redirecting) +
       '&c=' +
       encodeURIComponent(canceling) +
@@ -203,6 +209,7 @@ export const createCharge = (base_redirect, order, cart, shimmerExchange, tax = 
     // returning redirect url to woocommerce webshop
     return { redirect_url }
   } catch (err) {
+    // console.error(err.message);
     // returning error
     return new Error(err.message)
   }
