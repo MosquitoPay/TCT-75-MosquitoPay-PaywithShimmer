@@ -168,7 +168,7 @@ async fn main() {
                                                 if let Some(JsonValue::Array(features)) = output.get("features") {
                                                     for feature in features.iter() {
                                                         if let JsonValue::Object(feature_data) = feature {
-                                                            if let Some(JsonValue::Short(tag_data)) = feature_data.get("tag") {
+                                                            if let Some(JsonValue::String(tag_data)) = feature_data.get("tag") {
                                                                 let the_tagging = tag_data.to_string();
                                                                 let tagging = the_tagging.trim_start_matches("0x");
                                                                 match hex_decode(tagging) {

@@ -69,7 +69,7 @@ export default function Register() {
         <CardContent>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
-              <CardContent>Name: {shop.shopname}</CardContent>
+              <CardContent>Name: {shop.shopName}</CardContent>
             </div>
           </div>
           <div className="grid w-full items-center gap-4">

@@ -195,7 +195,7 @@ const webhookOrganizerActor = spawnStateless(
       const jsonFilePath = path.resolve(
         appRootPath.path,
         'mosquitopay-shimmer-backend',
-        'sample.shop.json',
+        'shop.json',
       );
 
       if (existsSync(jsonFilePath)) {
@@ -242,15 +242,15 @@ const webhookOrganizerActor = spawnStateless(
       console.log({
         body: request.body,
       });
-      // if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
-      //   const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
-      //   // console.log({ shopJson });
-      //   dispatch(webhookOrganizerActor, {
-      //     shop: shopJson,
-      //     tag: request.body.tag,
-      //     metadata: request.body.metadata,
-      //   })
-      // }
+      if (existsSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json'))) {
+        const shopJson = JSON.parse(readFileSync(path.resolve(appRootPath.path, 'mosquitopay-shimmer-backend', 'shop.json')).toString());
+        // console.log({ shopJson });
+        dispatch(webhookOrganizerActor, {
+          shop: shopJson,
+          tag: request.body.tag,
+          metadata: request.body.metadata,
+        })
+      }
       return reply.status(200).send();
     });
 

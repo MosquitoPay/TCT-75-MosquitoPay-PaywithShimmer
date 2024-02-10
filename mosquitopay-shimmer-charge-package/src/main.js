@@ -189,7 +189,7 @@ export const createCharge = (base_redirect, order, cart, shimmerExchange, tax = 
     // creating redirect url for woocommerce webshop
     const redirect_url =
       base_redirect +
-      '/?r=' +
+      '/pay?r=' +
       encodeURIComponent(redirecting) +
       '&c=' +
       encodeURIComponent(canceling) +
