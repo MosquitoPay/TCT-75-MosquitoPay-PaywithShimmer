@@ -2,7 +2,7 @@
 name = "mosquitopay-shimmer-client"
 version = "1.0.0"
 edition = "2021"
-authors = ["Dimas Praja <dimas.praja@mosquitopay.io>"]
+authors = ["MosquitoPay <info@mosquitopay.io>"]
 description = "Create a Mosquitopay payment receiver for pay with shimmer"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
