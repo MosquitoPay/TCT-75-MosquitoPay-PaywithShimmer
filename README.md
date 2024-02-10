@@ -8,8 +8,6 @@
 *** Thanks again! Now go create something AMAZING! :D
 -->
 
-
-
 <!-- PROJECT SHIELDS -->
 <!--
 *** I'm using markdown "reference style" links for readability.
@@ -18,37 +16,29 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-[![Contributors][contributors-shield]][contributors-url]
+<!-- [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+[![LinkedIn][linkedin-shield]][linkedin-url] -->
 
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
   <a href="https://github.com/github_username/repo_name">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="assets/logo.jpeg" alt="Logo" height="80">
   </a>
 
-<h3 align="center">project_title</h3>
+<h3 align="center">MosquitoPay - Pay with Shimmer</h3>
 
   <p align="center">
-    project_description
-    <br />
-    <a href="https://github.com/github_username/repo_name"><strong>Explore the docs »</strong></a>
+    This project is <strong>Mosquitopay Pay with Shimmer</strong> for Tangle Community Treasury
     <br />
     <br />
-    <a href="https://github.com/github_username/repo_name">View Demo</a>
-    ·
-    <a href="https://github.com/github_username/repo_name/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/github_username/repo_name/issues">Request Feature</a>
+    <a href="https://wp.mosquitopay.io">View Demo</a>
   </p>
 </div>
-
-
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -68,8 +58,6 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
@@ -81,34 +69,36 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+[![Product Name Screen Shot][product-screenshot]](assets/pay_with_shimmer.png)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
+This project is based on Tangle Community Treasury Grant [TCT-75: Mosquito Pay - Pay with Shimmer](https://www.tangletreasury.org/proposal-details?recordId=recVHKCZDBin0tddE).
+
+This project consist of two core function:
+* [mosquitopay-shimmer-client](mosquitopay-shimmer-client) Rust code with [iota-sdk](https://github.com/iotaledger/iota-sdk) for listening payment to the specified shimmer wallet address
+* [mosquitopay-shimmer-charge-package](mosquitopay-shimmer-charge-package) for parsing purchase request from woocommerce 
+
+And sample how to use it on backend and frontend of payment receiver:
+* [mosquitopay-shimmer-backend](mosquitopay-shimmer-backend) for handling payment request
+* [mosquitopay-shimmer-frontend](mosquitopay-shimmer-frontend) for handling payment request to the customer
+
+<!-- Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description` -->
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 ### Built With
 
-* [![Next][Next.js]][Next-url]
+* [![Rust][Rustlang.org]][Rustlang-url]
+* [![Fastify][Fastify.js]][Fastify-url]
+* [![Wordpress][Wordpress.com]][Wordpress-url]
+* [![Vite][Vitejs.dev]][Vite-url]
 * [![React][React.js]][React-url]
-* [![Vue][Vue.js]][Vue-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Svelte][Svelte.dev]][Svelte-url]
-* [![Laravel][Laravel.com]][Laravel-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+To run this project locally, you need some preparation.
 
 ### Prerequisites
 
@@ -119,109 +109,71 @@ To get a local copy up and running follow these simple example steps.
 > - Woocommerce plugin version 8.4.0
 > - Node.js version LTS
 > - Rust and Cargo version 1.74.0
-> - Firefly Shimmer version 2.1.10
+> - Firefly Shimmer version 2.1.12
 > 
 > ***
 
-This is how to list things you need to use the software and how to install them.
-* npm
+After all of it installed successfully, you can run:
+
+* pnpm
   ```sh
-  npm install npm@latest -g
+  npm install pnpm@latest -g
+  ```
+* packages
+  ```sh
+  pnpm install
   ```
 
 ### Installation
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/github_username/repo_name.git
-   ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
+1. Copy paste .env.example into .env on [mosquitopay-shimmer-backend](mosquitopay-shimmer-backend/.env.example) you can change the payment page base url and api url
+2. Copy paste .env.example into .env on [mosquitopay-shimmer-client](mosquitopay-shimmer-client/.env.example) you can change the shimmer wallet address with your wallet address and api url and also you custom api key
+3. Copy paste .env.example into .env on [mosquitopay-shimmer-frontend](mosquitopay-shimmer-frontend/.env.example) you can change the vite backend url with running http server and websocket server on [mosquitopay-shimmer-backend](mosquitopay-shimmer-backend)
+3. Go to web that run from [mosquitopay-shimmer-frontend](mosquitopay-shimmer-frontend) on default it's on [localhost:5173](http://localhost:5173)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+* To run all of the packages, run with the command:
+  ```sh
+  pnpm dev
+  ``` 
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+* Use [sample.shop.json](mosquitopay-shimmer-backend/sample.shop.json) to specify your shop url on shopName, your custom api key and webhhook key also your shommer wallet address to receive the [Shimmer](https://shimmer.network/token) payment.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+* Upload it on web that run from [mosquitopay-shimmer-frontend](mosquitopay-shimmer-frontend) on default it's on [localhost:5173](http://localhost:5173).
 
+* Download the plugin, and put it on your woocommerce shop plugin.
 
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
-
-See the [open issues](https://github.com/github_username/repo_name/issues) for a full list of proposed features (and known issues).
+* Now you can make purchase on your shop and can use payment Mosquitopay Pay with Shimmer.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the [Apache-2.0](LICENSE) License. See `LICENSE` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
+Mosquitopay - [@MosquitoPay](https://twitter.com/MosquitoPay) - info@mosquitopay.io
 
 Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* []()
-* []()
-* []()
+* [Tangle Community Treasury](https://www.tangletreasury.org)
+* [IOTA Foundation](https://www.iota.org)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
@@ -237,7 +189,7 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [license-url]: https://github.com/github_username/repo_name/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: assets/pay_with_shimmer.png
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
@@ -254,3 +206,11 @@ Project Link: [https://github.com/github_username/repo_name](https://github.com/
 [Bootstrap-url]: https://getbootstrap.com
 [JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
 [JQuery-url]: https://jquery.com 
+[Vitejs.dev]: https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white
+[Vite-url]: https://vitejs.dev
+[Fastify.js]: https://img.shields.io/badge/fastify-%23000000.svg?style=for-the-badge&logo=fastify&logoColor=white
+[Fastify-url]: https://fastify.dev
+[Wordpress.com]: https://img.shields.io/badge/WordPress-%23117AC9.svg?style=for-the-badge&logo=WordPress&logoColor=white
+[Wordpress-url]: https://wordpress.com
+[Rustlang.org]: https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white
+[Rustlang-url]: https://www.rust-lang.org
