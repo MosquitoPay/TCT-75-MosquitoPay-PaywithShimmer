@@ -117,7 +117,7 @@ After all of it installed successfully, you can run:
   pnpm dev
   ``` 
 
-* Use [sample.shop.json](mosquitopay-shimmer-backend/sample.shop.json) to specify your shop url on shopName, your custom api key and webhhook key also your shommer wallet address to receive the [Shimmer](https://shimmer.network/token) payment.
+* Use [sample.shop.json](mosquitopay-shimmer-backend/sample.shop.json) to specify your shop url on shopName, your custom api key and webhhook key also your shimmer wallet address to receive the [Shimmer](https://shimmer.network/token) payment.
 
 * Upload it on web that run from [mosquitopay-shimmer-frontend](mosquitopay-shimmer-frontend) on default it's on [localhost:5173](http://localhost:5173).
 
