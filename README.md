@@ -83,8 +83,11 @@ To run this project locally, you need some preparation.
 > - Node.js version LTS
 > - Rust and Cargo version 1.74.0
 > - Firefly Shimmer version 2.1.12
+> - iota-sdk version 1.1.2
 > 
 > ***
+
+For iota-sdk, need to check their documentation on [github](https://github.com/iotaledger/iota-sdk/tree/develop?tab=readme-ov-file#before-you-start).
 
 After all of it installed successfully, you can run:
 
